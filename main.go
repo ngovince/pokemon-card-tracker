@@ -50,12 +50,12 @@ func initDatabase() {
 // GET /api/cards - Get all cards
 func getCards(c *gin.Context) {
 	var cards []PokemonCard
-	
+
 	// Optional query parameters for filtering
 	name := c.Query("name")
 	set := c.Query("set")
 	gradingComp := c.Query("grading_company")
-	
+
 	query := db
 	if name != "" {
 		query = query.Where("name LIKE ?", "%"+name+"%")
@@ -66,13 +66,13 @@ func getCards(c *gin.Context) {
 	if gradingComp != "" {
 		query = query.Where("grading_company = ?", gradingComp)
 	}
-	
+
 	result := query.Find(&cards)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, cards)
 }
 
@@ -80,31 +80,31 @@ func getCards(c *gin.Context) {
 func getCard(c *gin.Context) {
 	id := c.Param("id")
 	var card PokemonCard
-	
+
 	result := db.First(&card, id)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, card)
 }
 
 // POST /api/cards - Create a new card
 func createCard(c *gin.Context) {
 	var card PokemonCard
-	
+
 	if err := c.ShouldBindJSON(&card); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	result := db.Create(&card)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, card)
 }
 
@@ -112,45 +112,45 @@ func createCard(c *gin.Context) {
 func updateCard(c *gin.Context) {
 	id := c.Param("id")
 	var card PokemonCard
-	
+
 	// Check if card exists
 	result := db.First(&card, id)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
 		return
 	}
-	
+
 	// Bind updated data
 	if err := c.ShouldBindJSON(&card); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Save updates
 	result = db.Save(&card)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, card)
 }
 
 // DELETE /api/cards/:id - Delete a card
 func deleteCard(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	result := db.Delete(&PokemonCard{}, id)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	
+
 	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Card deleted successfully"})
 }
 
@@ -158,20 +158,20 @@ func deleteCard(c *gin.Context) {
 func getStats(c *gin.Context) {
 	var totalCards int64
 	var totalValue float64
-	
+
 	db.Model(&PokemonCard{}).Count(&totalCards)
 	db.Model(&PokemonCard{}).Select("COALESCE(SUM(current_value), 0)").Scan(&totalValue)
-	
+
 	stats := gin.H{
-		"total_cards":    totalCards,
-		"total_value":    totalValue,
-		"average_value":  0.0,
+		"total_cards":   totalCards,
+		"total_value":   totalValue,
+		"average_value": 0.0,
 	}
-	
+
 	if totalCards > 0 {
 		stats["average_value"] = totalValue / float64(totalCards)
 	}
-	
+
 	c.JSON(http.StatusOK, stats)
 }
 
@@ -195,13 +195,13 @@ func corsMiddleware() gin.HandlerFunc {
 func main() {
 	// Initialize database
 	initDatabase()
-	
+
 	// Create Gin router
 	r := gin.Default()
-	
+
 	// Add CORS middleware
 	r.Use(corsMiddleware())
-	
+
 	// API routes
 	api := r.Group("/api")
 	{
@@ -212,18 +212,18 @@ func main() {
 		api.DELETE("/cards/:id", deleteCard)
 		api.GET("/stats", getStats)
 	}
-	
+
 	// Health check endpoint
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
-	
+
 	// Get port from environment or use default
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	
+
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(r.Run(":" + port))
 }
