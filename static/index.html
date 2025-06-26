@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Card Collection Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-box, .filter-select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus, .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #eee;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .grade-badge {
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .card-details {
+            margin-bottom: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .no-cards {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎴 Pokemon Card Collection Tracker</h1>
+            <p>Manage your graded Pokemon card collection</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCards">0</div>
+                <div class="stat-label">Total Cards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalValue">$0</div>
+                <div class="stat-label">Total Value</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgValue">$0</div>
+                <div class="stat-label">Average Value</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" class="search-box" id="searchInput" placeholder="Search cards...">
+            <select class="filter-select" id="gradingFilter">
+                <option value="">All Grading Companies</option>
+                <option value="PSA">PSA</option>
+                <option value="BGS">BGS</option>
+                <option value="CGC">CGC</option>
+            </select>
+            <select class="filter-select" id="setFilter">
+                <option value="">All Sets</option>
+            </select>
+            <button class="btn btn-primary" onclick="openAddModal()">Add New Card</button>
+            <button class="btn btn-success" onclick="loadCards()">Refresh</button>
+        </div>
+
+        <div id="cardContainer">
+            <div class="loading">Loading cards...</div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New Card</h2>
+            <form id="cardForm" onsubmit="saveCard(event)">
+                <div class="form-group">
+                    <label class="form-label">Card Name</label>
+                    <input type="text" class="form-input" id="cardName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Set</label>
+                    <input type="text" class="form-input" id="cardSet" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Card Number</label>
+                    <input type="text" class="form-input" id="cardNumber">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rarity</label>
+                    <input type="text" class="form-input" id="cardRarity">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Grading Company</label>
+                    <select class="form-input" id="gradingCompany">
+                        <option value="">Select Company</option>
+                        <option value="PSA">PSA</option>
+                        <option value="BGS">BGS</option>
+                        <option value="CGC">CGC</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Grade</label>
+                    <input type="text" class="form-input" id="cardGrade">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Purchase Price</label>
+                    <input type="number" step="0.01" class="form-input" id="purchasePrice">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Current Value</label>
+                    <input type="number" step="0.01" class="form-input" id="currentValue">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Purchase Date</label>
+                    <input type="date" class="form-input" id="purchaseDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Image URL</label>
+                    <input type="url" class="form-input" id="imageUrl">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-input" id="cardNotes" rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeModal()" style="background: #ccc;">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let currentEditId = null;
+        let allCards = [];
+
+        // Load cards and stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCards();
+            loadStats();
+            
+            // Add search functionality
+            document.getElementById('searchInput').addEventListener('input', filterCards);
+            document.getElementById('gradingFilter').addEventListener('change', filterCards);
+            document.getElementById('setFilter').addEventListener('change', filterCards);
+        });
+
+        async function loadCards() {
+            try {
+                const response = await fetch(`${API_BASE}/cards`);
+                allCards = await response.json();
+                displayCards(allCards);
+                populateSetFilter();
+            } catch (error) {
+                console.error('Error loading cards:', error);
+                document.getElementById('cardContainer').innerHTML = 
+                    '<div class="no-cards">Error loading cards. Make sure the backend server is running.</div>';
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalCards').textContent = stats.total_cards;
+                document.getElementById('totalValue').textContent = `$${stats.total_value.toFixed(2)}`;
+                document.getElementById('avgValue').textContent = `$${stats.average_value.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function displayCards(cards) {
+            const container = document.getElementById('cardContainer');
+            
+            if (cards.length === 0) {
+                container.innerHTML = '<div class="no-cards">No cards found. Add your first card to get started!</div>';
+                return;
+            }
+
+            const cardGrid = document.createElement('div');
+            cardGrid.className = 'card-grid';
+            
+            cards.forEach(card => {
+                const cardElement = createCardElement(card);
+                cardGrid.appendChild(cardElement);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(cardGrid);
+        }
+
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            
+            cardDiv.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">${card.name}</div>
+                    <div class="grade-badge">${card.grading_company} ${card.grade}</div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Set:</span>
+                        <span class="detail-value">${card.set}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Number:</span>
+                        <span class="detail-value">${card.card_number || 'N/A'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Purchase Price:</span>
+                        <span class="detail-value">$${card.purchase_price || '0.00'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Current Value:</span>
+                        <span class="detail-value">$${card.current_value || '0.00'}</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn btn-primary btn-sm" onclick="editCard(${card.id})">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCard(${card.id})">Delete</button>
+                </div>
+            `;
+            
+            return cardDiv;
+        }
+
+        function populateSetFilter() {
+            const setFilter = document.getElementById('setFilter');
+            const sets = [...new Set(allCards.map(card => card.set))].sort();
+            
+            // Clear existing options except the first one
+            setFilter.innerHTML = '<option value="">All Sets</option>';
+            
+            sets.forEach(set => {
+                const option = document.createElement('option');
+                option.value = set;
+                option.textContent = set;
+                setFilter.appendChild(option);
+            });
+        }
+
+        function filterCards() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const gradingFilter = document.getElementById('gradingFilter').value;
+            const setFilter = document.getElementById('setFilter').value;
+            
+            const filtered = allCards.filter(card => {
+                const matchesSearch = card.name.toLowerCase().includes(searchTerm) ||
+                                    card.set.toLowerCase().includes(searchTerm);
+                const matchesGrading = !gradingFilter || card.grading_company === gradingFilter;
+                const matchesSet = !setFilter || card.set === setFilter;
+                
+                return matchesSearch && matchesGrading && matchesSet;
+            });
+            
+            displayCards(filtered);
+        }
+
+        function openAddModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = 'Add New Card';
+            document.getElementById('cardForm').reset();
+            document.getElementById('cardModal').style.display = 'block';
+        }
+
+        function editCard(id) {
+            const card = allCards.find(c => c.id === id);
+            if (!card) return;
+            
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Card';
+            
+            // Populate form
+            document.getElementById('cardName').value = card.name;
+            document.getElementById('cardSet').value = card.set;
+            document.getElementById('cardNumber').value = card.card_number || '';
+            document.getElementById('cardRarity').value = card.rarity || '';
+            document.getElementById('gradingCompany').value = card.grading_company || '';
+            document.getElementById('cardGrade').value = card.grade || '';
+            document.getElementById('purchasePrice').value = card.purchase_price || '';
+            document.getElementById('currentValue').value = card.current_value || '';
+            document.getElementById('purchaseDate').value = card.purchase_date || '';
+            document.getElementById('imageUrl').value = card.image_url || '';
+            document.getElementById('cardNotes').value = card.notes || '';
+            
+            document.getElementById('cardModal').style.display = 'block';
+        }
+
+        async function saveCard(event) {
+            event.preventDefault();
+            
+            const cardData = {
+                name: document.getElementById('cardName').
