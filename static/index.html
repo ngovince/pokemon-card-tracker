@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokemon Card Collection Tracker</title>
+    <title>PSA Card Lookup & Collection</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -21,519 +21,568 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #ff6b6b, #feca57);
-            color: white;
-            padding: 30px;
             text-align: center;
+            color: white;
+            margin-bottom: 30px;
         }
 
         .header h1 {
-            font-size: 2.5em;
+            font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            background: #f8f9fa;
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
 
-        .stat-card {
+        .lookup-section {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .stat-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .controls {
+            border-radius: 12px;
             padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .lookup-form {
             display: flex;
             gap: 15px;
-            flex-wrap: wrap;
+            margin-bottom: 20px;
             align-items: center;
-            background: white;
-            border-bottom: 1px solid #eee;
         }
 
-        .search-box, .filter-select {
-            padding: 12px;
-            border: 2px solid #ddd;
+        .lookup-form input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
         }
 
-        .search-box:focus, .filter-select:focus {
+        .lookup-form input:focus {
             outline: none;
             border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 15px 25px;
             border: none;
             border-radius: 8px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
+            transition: all 0.3s ease;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #667eea;
             color: white;
         }
 
         .btn-primary:hover {
+            background: #5a6fd8;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+            background: #10b981;
             color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            background: #ef4444;
             color: white;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 30px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid #eee;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .card-name {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .grade-badge {
-            background: linear-gradient(135deg, #feca57, #ff9ff3);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-
-        .card-details {
-            margin-bottom: 15px;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .detail-label {
-            font-weight: bold;
-            color: #666;
-        }
-
-        .detail-value {
-            color: #333;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-sm {
-            padding: 8px 16px;
+            padding: 8px 12px;
             font-size: 14px;
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+        .btn-danger:hover {
+            background: #dc2626;
         }
 
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
+        .result-section {
+            margin-top: 20px;
         }
 
-        .form-group {
+        .card-preview {
+            background: #f8fafc;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .card-preview h3 {
+            color: #10b981;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
             margin-bottom: 20px;
         }
 
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
+        .detail-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
         }
 
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #1f2937;
             font-size: 16px;
         }
 
-        .form-input:focus {
-            outline: none;
-            border-color: #667eea;
+        .card-image {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .card-image img {
+            max-width: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .add-form {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .add-form h4 {
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .collection-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .collection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .collection-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .collection-card h4 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .collection-card .grade {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
         }
 
         .loading {
             text-align: center;
-            padding: 50px;
-            color: #666;
-            font-size: 1.2em;
+            padding: 20px;
+            color: #6b7280;
         }
 
-        .no-cards {
+        .empty-state {
             text-align: center;
-            padding: 50px;
-            color: #666;
+            padding: 40px;
+            color: #6b7280;
         }
 
-        @media (max-width: 768px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .card-grid {
-                grid-template-columns: 1fr;
-            }
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 8px;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎴 Pokemon Card Collection Tracker</h1>
-            <p>Manage your graded Pokemon card collection</p>
+            <h1>🎴 PSA Card Lookup & Collection</h1>
+            <p>Look up PSA graded cards and build your collection</p>
         </div>
 
-        <div class="stats" id="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="totalCards">0</div>
-                <div class="stat-label">Total Cards</div>
+        <!-- PSA Lookup Section -->
+        <div class="lookup-section">
+            <h2>🔍 Look Up PSA Card</h2>
+            <div class="lookup-form">
+                <input 
+                    type="text" 
+                    id="certInput" 
+                    placeholder="Enter PSA Cert Number (e.g., 12345678)"
+                    maxlength="10"
+                >
+                <button onclick="lookupCard()" class="btn btn-primary">Look Up Card</button>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalValue">$0</div>
-                <div class="stat-label">Total Value</div>
+            
+            <div id="lookupResult" class="result-section"></div>
+        </div>
+
+        <!-- Collection Section -->
+        <div class="collection-section">
+            <div class="collection-header">
+                <h2>📚 Your Collection</h2>
+                <button onclick="loadCollection()" class="btn btn-primary">Refresh</button>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="avgValue">$0</div>
-                <div class="stat-label">Average Value</div>
-            </div>
-        </div>
 
-        <div class="controls">
-            <input type="text" class="search-box" id="searchInput" placeholder="Search cards...">
-            <select class="filter-select" id="gradingFilter">
-                <option value="">All Grading Companies</option>
-                <option value="PSA">PSA</option>
-                <option value="BGS">BGS</option>
-                <option value="CGC">CGC</option>
-            </select>
-            <select class="filter-select" id="setFilter">
-                <option value="">All Sets</option>
-            </select>
-            <button class="btn btn-primary" onclick="openAddModal()">Add New Card</button>
-            <button class="btn btn-success" onclick="loadCards()">Refresh</button>
-        </div>
-
-        <div id="cardContainer">
-            <div class="loading">Loading cards...</div>
-        </div>
-    </div>
-
-    <!-- Add/Edit Modal -->
-    <div class="modal" id="cardModal">
-        <div class="modal-content">
-            <h2 id="modalTitle">Add New Card</h2>
-            <form id="cardForm" onsubmit="saveCard(event)">
-                <div class="form-group">
-                    <label class="form-label">Card Name</label>
-                    <input type="text" class="form-input" id="cardName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Set</label>
-                    <input type="text" class="form-input" id="cardSet" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Card Number</label>
-                    <input type="text" class="form-input" id="cardNumber">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Rarity</label>
-                    <input type="text" class="form-input" id="cardRarity">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Grading Company</label>
-                    <select class="form-input" id="gradingCompany">
-                        <option value="">Select Company</option>
-                        <option value="PSA">PSA</option>
-                        <option value="BGS">BGS</option>
-                        <option value="CGC">CGC</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Grade</label>
-                    <input type="text" class="form-input" id="cardGrade">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Purchase Price</label>
-                    <input type="number" step="0.01" class="form-input" id="purchasePrice">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Current Value</label>
-                    <input type="number" step="0.01" class="form-input" id="currentValue">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Purchase Date</label>
-                    <input type="date" class="form-input" id="purchaseDate">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Image URL</label>
-                    <input type="url" class="form-input" id="imageUrl">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Notes</label>
-                    <textarea class="form-input" id="cardNotes" rows="3"></textarea>
-                </div>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" class="btn" onclick="closeModal()" style="background: #ccc;">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Card</button>
-                </div>
-            </form>
+            <div id="collectionStats" class="stats"></div>
+            <div id="collectionGrid" class="collection-grid"></div>
         </div>
     </div>
 
     <script>
         const API_BASE = 'http://localhost:8080/api';
-        let currentEditId = null;
-        let allCards = [];
+        let currentCardData = null;
 
-        // Load cards and stats on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCards();
-            loadStats();
+        // Look up PSA card
+        async function lookupCard() {
+            const certNumber = document.getElementById('certInput').value.trim();
+            const resultDiv = document.getElementById('lookupResult');
             
-            // Add search functionality
-            document.getElementById('searchInput').addEventListener('input', filterCards);
-            document.getElementById('gradingFilter').addEventListener('change', filterCards);
-            document.getElementById('setFilter').addEventListener('change', filterCards);
-        });
-
-        async function loadCards() {
-            try {
-                const response = await fetch(`${API_BASE}/cards`);
-                allCards = await response.json();
-                displayCards(allCards);
-                populateSetFilter();
-            } catch (error) {
-                console.error('Error loading cards:', error);
-                document.getElementById('cardContainer').innerHTML = 
-                    '<div class="no-cards">Error loading cards. Make sure the backend server is running.</div>';
+            if (!certNumber) {
+                resultDiv.innerHTML = '<div class="error-message">Please enter a cert number</div>';
+                return;
             }
-        }
-
-        async function loadStats() {
+            
+            resultDiv.innerHTML = '<div class="loading">🔍 Looking up PSA card...</div>';
+            
             try {
-                const response = await fetch(`${API_BASE}/stats`);
-                const stats = await response.json();
+                const response = await fetch(`${API_BASE}/psa/lookup/${certNumber}`);
+                const data = await response.json();
                 
-                document.getElementById('totalCards').textContent = stats.total_cards;
-                document.getElementById('totalValue').textContent = `$${stats.total_value.toFixed(2)}`;
-                document.getElementById('avgValue').textContent = `$${stats.average_value.toFixed(2)}`;
+                console.log('API Response:', data); // Debug log
+                
+                if (response.ok) {
+                    if (data.success && data.card_data) {
+                        currentCardData = data.card_data;
+                        console.log('Card Data:', currentCardData); // Debug log
+                        displayCardResult(data.card_data);
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-message">❌ ${data.error || 'No card data found'}</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ ${data.error || 'API Error'}</div>`;
+                }
             } catch (error) {
-                console.error('Error loading stats:', error);
+                console.error('Network error:', error); // Debug log
+                resultDiv.innerHTML = `<div class="error-message">❌ Network error: ${error.message}</div>`;
             }
         }
 
-        function displayCards(cards) {
-            const container = document.getElementById('cardContainer');
+        function displayCardResult(cardData) {
+            const resultDiv = document.getElementById('lookupResult');
             
-            if (cards.length === 0) {
-                container.innerHTML = '<div class="no-cards">No cards found. Add your first card to get started!</div>';
+            resultDiv.innerHTML = `
+                <div class="card-preview">
+                    <h3>✅ PSA Card Found!</h3>
+                    
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Cert Number</div>
+                            <div class="detail-value">${cardData.cert_number || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Card Name</div>
+                            <div class="detail-value">${cardData.name || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Set/Brand</div>
+                            <div class="detail-value">${cardData.set || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Card Number</div>
+                            <div class="detail-value">${cardData.card_number || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Spec Number</div>
+                            <div class="detail-value">${cardData.spec_number || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Grade</div>
+                            <div class="detail-value">${cardData.grade || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Year</div>
+                            <div class="detail-value">${cardData.year || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Category</div>
+                            <div class="detail-value">${cardData.category || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Variety</div>
+                            <div class="detail-value">${cardData.variety || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Label Type</div>
+                            <div class="detail-value">${cardData.label_type || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Population (This Grade)</div>
+                            <div class="detail-value">${cardData.total_population || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Population Higher</div>
+                            <div class="detail-value">${cardData.population_higher || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    ${cardData.image_url ? `
+                        <div class="card-image">
+                            <img src="${cardData.image_url}" alt="Card Image" onerror="this.style.display='none'">
+                        </div>
+                    ` : '<p style="text-align: center; color: #6b7280; margin: 20px 0;">No image available for this card</p>'}
+
+                    <div class="add-form">
+                        <h4>💰 Add Purchase Information (Optional)</h4>
+                        <div class="form-group">
+                            <input type="number" id="purchasePrice" placeholder="Purchase Price ($)" step="0.01">
+                            <input type="number" id="currentValue" placeholder="Current Value ($)" step="0.01">
+                        </div>
+                        <input type="text" id="notes" placeholder="Notes (optional)" style="width: 100%; margin-bottom: 15px;">
+                        
+                        <button onclick="addToCollection()" class="btn btn-success">
+                            ➕ Add to Collection
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function addToCollection() {
+            if (!currentCardData) {
+                alert('No card data available');
                 return;
             }
 
-            const cardGrid = document.createElement('div');
-            cardGrid.className = 'card-grid';
-            
-            cards.forEach(card => {
-                const cardElement = createCardElement(card);
-                cardGrid.appendChild(cardElement);
-            });
-            
-            container.innerHTML = '';
-            container.appendChild(cardGrid);
+            const purchasePrice = document.getElementById('purchasePrice').value;
+            const currentValue = document.getElementById('currentValue').value;
+            const notes = document.getElementById('notes').value;
+
+            const cardToAdd = {
+                ...currentCardData,
+                purchase_price: purchasePrice || 0,
+                current_value: currentValue || 0,
+                notes: notes || ''
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/cards/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cardToAdd)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Card added to collection!');
+                    document.getElementById('certInput').value = '';
+                    document.getElementById('lookupResult').innerHTML = '';
+                    currentCardData = null;
+                    loadCollection();
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error.message}`);
+            }
         }
 
-        function createCardElement(card) {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'card';
+        async function loadCollection() {
+            try {
+                const [cardsResponse, statsResponse] = await Promise.all([
+                    fetch(`${API_BASE}/cards`),
+                    fetch(`${API_BASE}/stats`)
+                ]);
+
+                const cards = await cardsResponse.json();
+                const stats = await statsResponse.json();
+
+                displayStats(stats);
+                displayCollection(cards);
+            } catch (error) {
+                console.error('Error loading collection:', error);
+            }
+        }
+
+        function displayStats(stats) {
+            const statsDiv = document.getElementById('collectionStats');
             
-            cardDiv.innerHTML = `
-                <div class="card-header">
-                    <div class="card-name">${card.name}</div>
-                    <div class="grade-badge">${card.grading_company} ${card.grade}</div>
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total_cards}</div>
+                    <div class="stat-label">Total Cards</div>
                 </div>
-                <div class="card-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Set:</span>
-                        <span class="detail-value">${card.set}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Number:</span>
-                        <span class="detail-value">${card.card_number || 'N/A'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Purchase Price:</span>
-                        <span class="detail-value">$${card.purchase_price || '0.00'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Current Value:</span>
-                        <span class="detail-value">$${card.current_value || '0.00'}</span>
-                    </div>
+                <div class="stat-card">
+                    <div class="stat-value">$${stats.total_value}</div>
+                    <div class="stat-label">Total Value</div>
                 </div>
-                <div class="card-actions">
-                    <button class="btn btn-primary btn-sm" onclick="editCard(${card.id})">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteCard(${card.id})">Delete</button>
+                <div class="stat-card">
+                    <div class="stat-value">$${stats.average_value}</div>
+                    <div class="stat-label">Average Value</div>
                 </div>
             `;
-            
-            return cardDiv;
         }
 
-        function populateSetFilter() {
-            const setFilter = document.getElementById('setFilter');
-            const sets = [...new Set(allCards.map(card => card.set))].sort();
+        function displayCollection(cards) {
+            const gridDiv = document.getElementById('collectionGrid');
             
-            // Clear existing options except the first one
-            setFilter.innerHTML = '<option value="">All Sets</option>';
-            
-            sets.forEach(set => {
-                const option = document.createElement('option');
-                option.value = set;
-                option.textContent = set;
-                setFilter.appendChild(option);
-            });
+            if (cards.length === 0) {
+                gridDiv.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No cards in collection yet</h3>
+                        <p>Use the lookup tool above to add your first card!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            gridDiv.innerHTML = cards.map(card => `
+                <div class="collection-card">
+                    <button onclick="deleteCard(${card.id})" class="btn btn-danger delete-btn">×</button>
+                    <div class="grade">PSA ${card.grade}</div>
+                    
+                    <h4>${card.name}</h4>
+                    <p><strong>Set:</strong> ${card.set}</p>
+                    <p><strong>Cert:</strong> ${card.cert_number}</p>
+                    
+                    ${card.card_number ? `<p><strong>Number:</strong> ${card.card_number}</p>` : ''}
+                    ${card.year ? `<p><strong>Year:</strong> ${card.year}</p>` : ''}
+                    ${card.brand ? `<p><strong>Brand:</strong> ${card.brand}</p>` : ''}
+                    
+                    <div style="margin-top: 10px;">
+                        ${card.purchase_price > 0 ? `<p><strong>Purchase:</strong> $${card.purchase_price}</p>` : ''}
+                        ${card.current_value > 0 ? `<p><strong>Value:</strong> $${card.current_value}</p>` : ''}
+                    </div>
+                    
+                    ${card.notes ? `<p style="margin-top: 10px; font-style: italic;">${card.notes}</p>` : ''}
+                </div>
+            `).join('');
         }
 
-        function filterCards() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const gradingFilter = document.getElementById('gradingFilter').value;
-            const setFilter = document.getElementById('setFilter').value;
-            
-            const filtered = allCards.filter(card => {
-                const matchesSearch = card.name.toLowerCase().includes(searchTerm) ||
-                                    card.set.toLowerCase().includes(searchTerm);
-                const matchesGrading = !gradingFilter || card.grading_company === gradingFilter;
-                const matchesSet = !setFilter || card.set === setFilter;
-                
-                return matchesSearch && matchesGrading && matchesSet;
-            });
-            
-            displayCards(filtered);
+        async function deleteCard(cardId) {
+            if (!confirm('Are you sure you want to remove this card?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/cards/${cardId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadCollection();
+                } else {
+                    alert('Error deleting card');
+                }
+            } catch (error) {
+                alert('Network error');
+            }
         }
 
-        function openAddModal() {
-            currentEditId = null;
-            document.getElementById('modalTitle').textContent = 'Add New Card';
-            document.getElementById('cardForm').reset();
-            document.getElementById('cardModal').style.display = 'block';
-        }
+        // Allow Enter key for lookup
+        document.getElementById('certInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                lookupCard();
+            }
+        });
 
-        function editCard(id) {
-            const card = allCards.find(c => c.id === id);
-            if (!card) return;
-            
-            currentEditId = id;
-            document.getElementById('modalTitle').textContent = 'Edit Card';
-            
-            // Populate form
-            document.getElementById('cardName').value = card.name;
-            document.getElementById('cardSet').value = card.set;
-            document.getElementById('cardNumber').value = card.card_number || '';
-            document.getElementById('cardRarity').value = card.rarity || '';
-            document.getElementById('gradingCompany').value = card.grading_company || '';
-            document.getElementById('cardGrade').value = card.grade || '';
-            document.getElementById('purchasePrice').value = card.purchase_price || '';
-            document.getElementById('currentValue').value = card.current_value || '';
-            document.getElementById('purchaseDate').value = card.purchase_date || '';
-            document.getElementById('imageUrl').value = card.image_url || '';
-            document.getElementById('cardNotes').value = card.notes || '';
-            
-            document.getElementById('cardModal').style.display = 'block';
-        }
-
-        async function saveCard(event) {
-            event.preventDefault();
-            
-            const cardData = {
-                name: document.getElementById('cardName').
+        // Load collection on page load
+        document.addEventListener('DOMContentLoaded', loadCollection);
+    </script>
+</body>
+</html>

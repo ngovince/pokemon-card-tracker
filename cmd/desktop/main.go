@@ -38,28 +38,44 @@ type CardModel struct {
 	cards []PokemonCard
 
 	// Define roles for QML access
-	_ int `property:"count"`
+	_ int                          `property:"count"`
 	_ func(row int) *core.QVariant `slot:"get"`
 	_ func()                       `slot:"refresh"`
 	_ func(card *PokemonCard)      `slot:"addCard"`
 	_ func(id int)                 `slot:"deleteCard"`
 }
 
+// Define role constants
+const (
+	IdRole = int(core.Qt__UserRole) + 1 + iota
+	NameRole
+	SetRole
+	CardNumberRole
+	RarityRole
+	GradingCompanyRole
+	GradeRole
+	PurchasePriceRole
+	CurrentValueRole
+	PurchaseDateRole
+	ImageUrlRole
+	NotesRole
+)
+
 // Define QML roles
 func (m *CardModel) roleNames() map[int]*core.QByteArray {
 	return map[int]*core.QByteArray{
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("id", len("id")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("name", len("name")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("set", len("set")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("cardNumber", len("cardNumber")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("rarity", len("rarity")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("gradingCompany", len("gradingCompany")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("grade", len("grade")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("purchasePrice", len("purchasePrice")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("currentValue", len("currentValue")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("purchaseDate", len("purchaseDate")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("imageUrl", len("imageUrl")),
-		int(core.Qt__UserRole) + 1<<iota: core.NewQByteArray2("notes", len("notes")),
+		IdRole:             core.NewQByteArray2("id", len("id")),
+		NameRole:           core.NewQByteArray2("name", len("name")),
+		SetRole:            core.NewQByteArray2("set", len("set")),
+		CardNumberRole:     core.NewQByteArray2("cardNumber", len("cardNumber")),
+		RarityRole:         core.NewQByteArray2("rarity", len("rarity")),
+		GradingCompanyRole: core.NewQByteArray2("gradingCompany", len("gradingCompany")),
+		GradeRole:          core.NewQByteArray2("grade", len("grade")),
+		PurchasePriceRole:  core.NewQByteArray2("purchasePrice", len("purchasePrice")),
+		CurrentValueRole:   core.NewQByteArray2("currentValue", len("currentValue")),
+		PurchaseDateRole:   core.NewQByteArray2("purchaseDate", len("purchaseDate")),
+		ImageUrlRole:       core.NewQByteArray2("imageUrl", len("imageUrl")),
+		NotesRole:          core.NewQByteArray2("notes", len("notes")),
 	}
 }
 
@@ -73,30 +89,30 @@ func (m *CardModel) data(index *core.QModelIndex, role int) *core.QVariant {
 	}
 
 	card := m.cards[index.Row()]
-	switch role - int(core.Qt__UserRole) {
-	case 1:
+	switch role {
+	case IdRole:
 		return core.NewQVariant1(card.ID)
-	case 2:
+	case NameRole:
 		return core.NewQVariant1(card.Name)
-	case 3:
+	case SetRole:
 		return core.NewQVariant1(card.Set)
-	case 4:
+	case CardNumberRole:
 		return core.NewQVariant1(card.CardNumber)
-	case 5:
+	case RarityRole:
 		return core.NewQVariant1(card.Rarity)
-	case 6:
+	case GradingCompanyRole:
 		return core.NewQVariant1(card.GradingComp)
-	case 7:
+	case GradeRole:
 		return core.NewQVariant1(card.Grade)
-	case 8:
+	case PurchasePriceRole:
 		return core.NewQVariant1(card.PurchPrice)
-	case 9:
+	case CurrentValueRole:
 		return core.NewQVariant1(card.CurrentValue)
-	case 10:
+	case PurchaseDateRole:
 		return core.NewQVariant1(card.PurchDate)
-	case 11:
+	case ImageUrlRole:
 		return core.NewQVariant1(card.ImageURL)
-	case 12:
+	case NotesRole:
 		return core.NewQVariant1(card.Notes)
 	}
 
@@ -106,7 +122,7 @@ func (m *CardModel) data(index *core.QModelIndex, role int) *core.QVariant {
 func (m *CardModel) init() {
 	m.cards = make([]PokemonCard, 0)
 	m.SetCount(0)
-	
+
 	// Connect signals
 	m.ConnectRoleNames(m.roleNames)
 	m.ConnectRowCount(m.rowCount)
@@ -121,7 +137,7 @@ func (m *CardModel) get(row int) *core.QVariant {
 	if row < 0 || row >= len(m.cards) {
 		return core.NewQVariant()
 	}
-	
+
 	card := m.cards[row]
 	cardMap := map[string]interface{}{
 		"id":             card.ID,
@@ -137,13 +153,13 @@ func (m *CardModel) get(row int) *core.QVariant {
 		"imageUrl":       card.ImageURL,
 		"notes":          card.Notes,
 	}
-	
+
 	return core.NewQVariant1(cardMap)
 }
 
 func (m *CardModel) refresh() {
 	m.BeginResetModel()
-	
+
 	// Fetch cards from API
 	resp, err := http.Get("http://localhost:8080/api/cards")
 	if err != nil {
@@ -175,12 +191,12 @@ func (m *CardModel) deleteCard(id int) {
 	// Make API call to delete card
 	req, _ := http.NewRequest("DELETE", fmt.Sprintf("http://localhost:8080/api/cards/%d", id), nil)
 	client := &http.Client{}
-	
+
 	if _, err := client.Do(req); err != nil {
 		log.Printf("Error deleting card: %v", err)
 		return
 	}
-	
+
 	// Refresh the model
 	m.refresh()
 }
