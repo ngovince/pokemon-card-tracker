@@ -1,4 +1,4 @@
-# fixed_app.py - Simple PSA Card Lookup (FIXED VERSION)
+# app.py - PSA Card Lookup with Images (CORRECTED)
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
@@ -67,6 +67,38 @@ def lookup_psa_cert(cert_number):
         print(f"❌ Exception: {str(e)}")
         return {'error': f'Error: {str(e)}'}
 
+def lookup_psa_cert_images(cert_number):
+    """Look up PSA cert images - separate API call"""
+    headers = get_psa_headers()
+    if not headers:
+        return None
+    
+    try:
+        clean_cert = ''.join(filter(str.isdigit, str(cert_number)))
+        clean_cert = clean_cert.zfill(8)
+        
+        # PSA Image API endpoint
+        url = f"{PSA_API_BASE}/cert/GetImagesByCertNumber/{clean_cert}"
+        print(f"🖼️ Getting images for cert: {clean_cert}")
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        print(f"📊 Image API status: {response.status_code}")
+        
+        if response.status_code == 200:
+            image_data = response.json()
+            print(f"✅ Got image data: {image_data}")
+            return image_data
+        elif response.status_code == 429:
+            print("⏰ Image API rate limited")
+            return None
+        else:
+            print(f"❌ Image API error: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"⚠️ Image lookup failed: {str(e)}")
+        return None
+
 def parse_psa_data(psa_data):
     """Parse PSA API data into card format"""
     try:
@@ -90,6 +122,8 @@ def parse_psa_data(psa_data):
             'is_dual_cert': psa_cert.get('IsDualCert', False),
             'reverse_bar_code': psa_cert.get('ReverseBarCode', False),
             'image_url': psa_cert.get('ImageFront', ''),
+            'image_front': '',
+            'image_back': '',
         }
         
         print(f"📋 Parsed card info: {card_info}")
@@ -110,11 +144,11 @@ def health():
 
 @app.route('/api/psa/lookup/<cert_number>', methods=['GET'])
 def lookup_cert(cert_number):
-    """Look up a PSA cert and return parsed data"""
+    """Look up a PSA cert and return parsed data with images"""
     print(f"🎯 API ENDPOINT HIT for cert: {cert_number}")
     
     try:
-        # Step 1: Lookup PSA cert
+        # Step 1: Lookup PSA cert data (your working code)
         psa_result = lookup_psa_cert(cert_number)
         print(f"🔍 PSA lookup result: {psa_result}")
         
@@ -122,7 +156,7 @@ def lookup_cert(cert_number):
             print(f"❌ PSA lookup failed: {psa_result['error']}")
             return jsonify(psa_result), 400
         
-        # Step 2: Parse the data
+        # Step 2: Parse the basic data
         card_data = parse_psa_data(psa_result['data'])
         print(f"📋 Parse result: {card_data}")
         
@@ -130,12 +164,35 @@ def lookup_cert(cert_number):
             print(f"❌ Parse failed: {card_data['error']}")
             return jsonify(card_data), 400
         
-        # Step 3: Return success
+        # Step 3: Try to get images (separate API call)
+        image_data = lookup_psa_cert_images(cert_number)
+        if image_data:
+            # Handle the list format from PSA image API
+            try:
+                if isinstance(image_data, list):
+                    for img in image_data:
+                        if img.get('IsFrontImage') == True:
+                            card_data['image_front'] = img.get('ImageURL', '')
+                            card_data['image_url'] = card_data['image_front']
+                        elif img.get('IsFrontImage') == False:
+                            card_data['image_back'] = img.get('ImageURL', '')
+                    print(f"✅ Added images: Front={card_data['image_front']}, Back={card_data['image_back']}")
+                elif isinstance(image_data, dict):
+                    # Fallback for dict format
+                    card_data['image_front'] = image_data.get('ImageFront', '')
+                    card_data['image_back'] = image_data.get('ImageBack', '')
+                    if card_data['image_front']:
+                        card_data['image_url'] = card_data['image_front']
+            except Exception as img_error:
+                print(f"⚠️ Error processing images: {img_error}")
+                # Continue without images
+        
+        # Step 4: Return success
         response = {
             'success': True,
             'card_data': card_data
         }
-        print(f"✅ RETURNING SUCCESS: {response}")
+        print(f"✅ RETURNING SUCCESS with images: {response}")
         return jsonify(response)
         
     except Exception as e:
