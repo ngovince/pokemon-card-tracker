@@ -1,0 +1,32 @@
+{
+  "cards": [
+    {
+      "id": 1,
+      "cert_number": "114913905",
+      "name": "SLOWPOKE-REV.FOIL",
+      "set": "POKEMON EX TEAM ROCKET RETURNS",
+      "card_number": "76",
+      "spec_number": "E582000094",
+      "grade": "MINT 9",
+      "grade_description": "MINT 9",
+      "year": "2004",
+      "brand": "POKEMON EX TEAM ROCKET RETURNS",
+      "category": "TCG Cards",
+      "variety": "TEAM ROCKET RETURNS",
+      "label_type": "LighthouseLabel",
+      "total_population": 62,
+      "population_higher": 21,
+      "is_dual_cert": false,
+      "reverse_bar_code": true,
+      "image_url": "https://d1htnxwo4o0jhw.cloudfront.net/cert/179383000/cSXAtJcA2Ua8hnbaFuM8sg.jpg",
+      "image_front": "https://d1htnxwo4o0jhw.cloudfront.net/cert/179383000/cSXAtJcA2Ua8hnbaFuM8sg.jpg",
+      "image_back": "https://d1htnxwo4o0jhw.cloudfront.net/cert/179383000/q4lD2DoCGU2ZKVohhA0kdw.jpg",
+      "purchase_price": 0,
+      "current_value": 0,
+      "notes": "",
+      "added_date": "2025-06-26"
+    }
+  ],
+  "next_id": 2,
+  "last_updated": "2025-06-26 22:58:49"
+}

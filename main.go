@@ -1,229 +1,476 @@
-// main.go
+// main.go - PSA Card Collection API in Go
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
-// PokemonCard represents a graded Pokemon card in the collection
-type PokemonCard struct {
-	ID           uint    `json:"id" gorm:"primaryKey"`
-	Name         string  `json:"name" gorm:"not null"`
-	Set          string  `json:"set" gorm:"not null"`
-	CardNumber   string  `json:"card_number"`
-	Rarity       string  `json:"rarity"`
-	GradingComp  string  `json:"grading_company"` // PSA, BGS, CGC, etc.
-	Grade        string  `json:"grade"`           // 10, 9.5, etc.
-	PurchPrice   float64 `json:"purchase_price"`
-	CurrentValue float64 `json:"current_value"`
-	PurchDate    string  `json:"purchase_date"`
-	ImageURL     string  `json:"image_url"`
-	Notes        string  `json:"notes"`
-	CreatedAt    string  `json:"created_at"`
-	UpdatedAt    string  `json:"updated_at"`
+// Card represents a PSA graded card
+type Card struct {
+	ID             int     `json:"id"`
+	CertNumber     string  `json:"cert_number"`
+	Name           string  `json:"name"`
+	Set            string  `json:"set"`
+	CardNumber     string  `json:"card_number"`
+	SpecNumber     string  `json:"spec_number"`
+	Grade          string  `json:"grade"`
+	GradeDesc      string  `json:"grade_description"`
+	Year           string  `json:"year"`
+	Brand          string  `json:"brand"`
+	Category       string  `json:"category"`
+	Variety        string  `json:"variety"`
+	LabelType      string  `json:"label_type"`
+	TotalPop       int     `json:"total_population"`
+	PopHigher      int     `json:"population_higher"`
+	IsDualCert     bool    `json:"is_dual_cert"`
+	ReverseBarCode bool    `json:"reverse_bar_code"`
+	ImageURL       string  `json:"image_url"`
+	ImageFront     string  `json:"image_front"`
+	ImageBack      string  `json:"image_back"`
+	PurchasePrice  float64 `json:"purchase_price"`
+	CurrentValue   float64 `json:"current_value"`
+	Notes          string  `json:"notes"`
+	AddedDate      string  `json:"added_date"`
 }
 
-var db *gorm.DB
-
-func initDatabase() {
-	var err error
-	db, err = gorm.Open(sqlite.Open("pokemon_cards.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-
-	// Auto-migrate the schema
-	err = db.AutoMigrate(&PokemonCard{})
-	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
-	}
+// PSACert represents the PSA API response structure
+type PSACert struct {
+	CertNumber                   string `json:"CertNumber"`
+	SpecID                       int    `json:"SpecID"`
+	SpecNumber                   string `json:"SpecNumber"`
+	LabelType                    string `json:"LabelType"`
+	ReverseBarCode               bool   `json:"ReverseBarCode"`
+	Year                         string `json:"Year"`
+	Brand                        string `json:"Brand"`
+	Category                     string `json:"Category"`
+	CardNumber                   string `json:"CardNumber"`
+	Subject                      string `json:"Subject"`
+	Variety                      string `json:"Variety"`
+	IsPSADNA                     bool   `json:"IsPSADNA"`
+	IsDualCert                   bool   `json:"IsDualCert"`
+	GradeDescription             string `json:"GradeDescription"`
+	CardGrade                    string `json:"CardGrade"`
+	TotalPopulation              int    `json:"TotalPopulation"`
+	TotalPopulationWithQualifier int    `json:"TotalPopulationWithQualifier"`
+	PopulationHigher             int    `json:"PopulationHigher"`
+	ImageFront                   string `json:"ImageFront"`
 }
 
-// API Handlers
-
-// GET /api/cards - Get all cards
-func getCards(c *gin.Context) {
-	var cards []PokemonCard
-
-	// Optional query parameters for filtering
-	name := c.Query("name")
-	set := c.Query("set")
-	gradingComp := c.Query("grading_company")
-
-	query := db
-	if name != "" {
-		query = query.Where("name LIKE ?", "%"+name+"%")
-	}
-	if set != "" {
-		query = query.Where("set LIKE ?", "%"+set+"%")
-	}
-	if gradingComp != "" {
-		query = query.Where("grading_company = ?", gradingComp)
-	}
-
-	result := query.Find(&cards)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, cards)
+type PSAResponse struct {
+	PSACert PSACert `json:"PSACert"`
 }
 
-// GET /api/cards/:id - Get a specific card
-func getCard(c *gin.Context) {
-	id := c.Param("id")
-	var card PokemonCard
-
-	result := db.First(&card, id)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, card)
+type PSAImageResponse struct {
+	IsFrontImage bool   `json:"IsFrontImage"`
+	ImageURL     string `json:"ImageURL"`
 }
 
-// POST /api/cards - Create a new card
-func createCard(c *gin.Context) {
-	var card PokemonCard
-
-	if err := c.ShouldBindJSON(&card); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	result := db.Create(&card)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, card)
+// Collection represents the stored collection data
+type Collection struct {
+	Cards      []Card `json:"cards"`
+	NextID     int    `json:"next_id"`
+	LastUpdate string `json:"last_updated"`
 }
 
-// PUT /api/cards/:id - Update a card
-func updateCard(c *gin.Context) {
-	id := c.Param("id")
-	var card PokemonCard
-
-	// Check if card exists
-	result := db.First(&card, id)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
-		return
-	}
-
-	// Bind updated data
-	if err := c.ShouldBindJSON(&card); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Save updates
-	result = db.Save(&card)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, card)
+// Stats represents collection statistics
+type Stats struct {
+	TotalCards   int     `json:"total_cards"`
+	TotalValue   float64 `json:"total_value"`
+	AverageValue float64 `json:"average_value"`
 }
 
-// DELETE /api/cards/:id - Delete a card
-func deleteCard(c *gin.Context) {
-	id := c.Param("id")
-
-	result := db.Delete(&PokemonCard{}, id)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Card deleted successfully"})
-}
-
-// GET /api/stats - Get collection statistics
-func getStats(c *gin.Context) {
-	var totalCards int64
-	var totalValue float64
-
-	db.Model(&PokemonCard{}).Count(&totalCards)
-	db.Model(&PokemonCard{}).Select("COALESCE(SUM(current_value), 0)").Scan(&totalValue)
-
-	stats := gin.H{
-		"total_cards":   totalCards,
-		"total_value":   totalValue,
-		"average_value": 0.0,
-	}
-
-	if totalCards > 0 {
-		stats["average_value"] = totalValue / float64(totalCards)
-	}
-
-	c.JSON(http.StatusOK, stats)
-}
-
-// CORS middleware
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
+// Global variables
+var (
+	collection   Collection
+	psaAuthToken string
+	dataFile     = "collection.json"
+)
 
 func main() {
-	// Initialize database
-	initDatabase()
+	// Load environment variables
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: No .env file found")
+	}
 
-	// Create Gin router
-	r := gin.Default()
+	psaAuthToken = os.Getenv("PSA_AUTH_TOKEN")
 
-	// Add CORS middleware
-	r.Use(corsMiddleware())
+	// Load existing collection
+	loadCollection()
+
+	// Setup router
+	router := mux.NewRouter()
 
 	// API routes
-	api := r.Group("/api")
-	{
-		api.GET("/cards", getCards)
-		api.GET("/cards/:id", getCard)
-		api.POST("/cards", createCard)
-		api.PUT("/cards/:id", updateCard)
-		api.DELETE("/cards/:id", deleteCard)
-		api.GET("/stats", getStats)
-	}
+	api := router.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/health", healthHandler).Methods("GET")
+	api.HandleFunc("/psa/lookup/{certNumber}", psaLookupHandler).Methods("GET")
+	api.HandleFunc("/cards", getCardsHandler).Methods("GET")
+	api.HandleFunc("/cards/add", addCardHandler).Methods("POST")
+	api.HandleFunc("/cards/{id}", deleteCardHandler).Methods("DELETE")
+	api.HandleFunc("/stats", getStatsHandler).Methods("GET")
 
-	// Health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	// Static file serving
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
+
+	// Setup CORS
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"*"},
 	})
 
-	// Get port from environment or use default
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	handler := c.Handler(router)
+
+	// Start server
+	port := "8080"
+	fmt.Println("🎴 PSA Card Collection API (Go Version)")
+	fmt.Printf("🌐 Server running on http://localhost:%s\n", port)
+	fmt.Printf("💾 Storage: %s\n", dataFile)
+	fmt.Printf("📚 Loaded Collection: %d cards\n", len(collection.Cards))
+	if psaAuthToken != "" {
+		fmt.Println("🎯 PSA API: Configured ✅")
+	} else {
+		fmt.Println("🎯 PSA API: Not configured ❌")
+	}
+	fmt.Println("---")
+
+	log.Fatal(http.ListenAndServe(":"+port, handler))
+}
+
+func loadCollection() {
+	if _, err := os.Stat(dataFile); os.IsNotExist(err) {
+		// File doesn't exist, start with empty collection
+		collection = Collection{
+			Cards:  []Card{},
+			NextID: 1,
+		}
+		log.Printf("📁 No existing collection file found, starting fresh")
+		return
 	}
 
-	log.Printf("Server starting on port %s", port)
-	log.Fatal(r.Run(":" + port))
+	data, err := ioutil.ReadFile(dataFile)
+	if err != nil {
+		log.Printf("❌ Error reading collection file: %v", err)
+		collection = Collection{Cards: []Card{}, NextID: 1}
+		return
+	}
+
+	err = json.Unmarshal(data, &collection)
+	if err != nil {
+		log.Printf("❌ Error parsing collection file: %v", err)
+		collection = Collection{Cards: []Card{}, NextID: 1}
+		return
+	}
+
+	log.Printf("📚 Loaded %d cards from %s", len(collection.Cards), dataFile)
+}
+
+func saveCollection() error {
+	collection.LastUpdate = time.Now().Format("2006-01-02 15:04:05")
+
+	data, err := json.MarshalIndent(collection, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(dataFile, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("💾 Saved %d cards to %s", len(collection.Cards), dataFile)
+	return nil
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func psaLookupHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	certNumber := vars["certNumber"]
+
+	log.Printf("🎯 PSA Lookup request for cert: %s", certNumber)
+
+	if psaAuthToken == "" {
+		http.Error(w, `{"error": "PSA API token not configured"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Clean cert number
+	cleanCert := ""
+	for _, char := range certNumber {
+		if char >= '0' && char <= '9' {
+			cleanCert += string(char)
+		}
+	}
+
+	if len(cleanCert) < 8 {
+		http.Error(w, `{"error": "Invalid cert number format"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Pad with zeros if needed
+	for len(cleanCert) < 8 {
+		cleanCert = "0" + cleanCert
+	}
+
+	// Step 1: Get card data
+	cardData, err := lookupPSACard(cleanCert)
+	if err != nil {
+		log.Printf("❌ PSA card lookup failed: %v", err)
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// Step 2: Get images
+	images, err := lookupPSAImages(cleanCert)
+	if err != nil {
+		log.Printf("⚠️ PSA image lookup failed: %v", err)
+		// Continue without images
+	} else {
+		// Add images to card data
+		for _, img := range images {
+			if img.IsFrontImage {
+				cardData.ImageFront = img.ImageURL
+				cardData.ImageURL = img.ImageURL
+			} else {
+				cardData.ImageBack = img.ImageURL
+			}
+		}
+	}
+
+	log.Printf("✅ PSA lookup successful for cert: %s", certNumber)
+
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"success":   true,
+		"card_data": cardData,
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+func lookupPSACard(certNumber string) (*Card, error) {
+	url := fmt.Sprintf("https://api.psacard.com/publicapi/cert/GetByCertNumber/%s", certNumber)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "bearer "+psaAuthToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("PSA API returned status %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var psaResp PSAResponse
+	err = json.Unmarshal(body, &psaResp)
+	if err != nil {
+		return nil, err
+	}
+
+	if psaResp.PSACert.CertNumber == "" {
+		return nil, fmt.Errorf("no PSA cert data found")
+	}
+
+	// Convert PSA response to our Card structure
+	card := &Card{
+		CertNumber:     psaResp.PSACert.CertNumber,
+		Name:           psaResp.PSACert.Subject,
+		Set:            psaResp.PSACert.Brand,
+		CardNumber:     psaResp.PSACert.CardNumber,
+		SpecNumber:     psaResp.PSACert.SpecNumber,
+		Grade:          psaResp.PSACert.CardGrade,
+		GradeDesc:      psaResp.PSACert.GradeDescription,
+		Year:           psaResp.PSACert.Year,
+		Brand:          psaResp.PSACert.Brand,
+		Category:       psaResp.PSACert.Category,
+		Variety:        psaResp.PSACert.Variety,
+		LabelType:      psaResp.PSACert.LabelType,
+		TotalPop:       psaResp.PSACert.TotalPopulation,
+		PopHigher:      psaResp.PSACert.PopulationHigher,
+		IsDualCert:     psaResp.PSACert.IsDualCert,
+		ReverseBarCode: psaResp.PSACert.ReverseBarCode,
+		ImageURL:       psaResp.PSACert.ImageFront,
+	}
+
+	return card, nil
+}
+
+func lookupPSAImages(certNumber string) ([]PSAImageResponse, error) {
+	url := fmt.Sprintf("https://api.psacard.com/publicapi/cert/GetImagesByCertNumber/%s", certNumber)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "bearer "+psaAuthToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 429 {
+		return nil, fmt.Errorf("rate limited")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("image API returned status %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var images []PSAImageResponse
+	err = json.Unmarshal(body, &images)
+	if err != nil {
+		return nil, err
+	}
+
+	return images, nil
+}
+
+func getCardsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(collection.Cards)
+}
+
+func addCardHandler(w http.ResponseWriter, r *http.Request) {
+	var card Card
+	err := json.NewDecoder(r.Body).Decode(&card)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("📝 Adding card: %s", card.Name)
+
+	// Check for duplicates
+	for _, existingCard := range collection.Cards {
+		if existingCard.CertNumber == card.CertNumber && card.CertNumber != "" {
+			http.Error(w, `{"error": "Card already exists"}`, http.StatusConflict)
+			return
+		}
+	}
+
+	// Set card ID and add date
+	card.ID = collection.NextID
+	card.AddedDate = time.Now().Format("2006-01-02")
+	collection.NextID++
+
+	// Add to collection
+	collection.Cards = append(collection.Cards, card)
+
+	// Save to file
+	err = saveCollection()
+	if err != nil {
+		log.Printf("⚠️ Failed to save collection: %v", err)
+	}
+
+	log.Printf("✅ Card added successfully: %d", card.ID)
+
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"success": true,
+		"card":    card,
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+func deleteCardHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid card ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Find and remove card
+	originalLength := len(collection.Cards)
+	newCards := []Card{}
+	for _, card := range collection.Cards {
+		if card.ID != id {
+			newCards = append(newCards, card)
+		}
+	}
+
+	if len(newCards) == originalLength {
+		http.Error(w, `{"error": "Card not found"}`, http.StatusNotFound)
+		return
+	}
+
+	collection.Cards = newCards
+
+	// Save to file
+	err = saveCollection()
+	if err != nil {
+		log.Printf("⚠️ Failed to save collection: %v", err)
+	}
+
+	log.Printf("✅ Card %d deleted successfully", id)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+func getStatsHandler(w http.ResponseWriter, r *http.Request) {
+	totalCards := len(collection.Cards)
+	totalValue := 0.0
+	for _, card := range collection.Cards {
+		totalValue += card.CurrentValue
+	}
+
+	averageValue := 0.0
+	if totalCards > 0 {
+		averageValue = totalValue / float64(totalCards)
+	}
+
+	stats := Stats{
+		TotalCards:   totalCards,
+		TotalValue:   roundFloat(totalValue, 2),
+		AverageValue: roundFloat(averageValue, 2),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func roundFloat(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
 }
