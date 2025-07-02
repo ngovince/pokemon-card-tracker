@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSA Card Lookup & Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .lookup-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .lookup-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .lookup-form input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .lookup-form input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .result-section {
+            margin-top: 20px;
+        }
+
+        .card-preview {
+            background: #f8fafc;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .card-preview h3 {
+            color: #10b981;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #1f2937;
+            font-size: 16px;
+        }
+
+        .card-image {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .card-image img {
+            max-width: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .add-form {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .add-form h4 {
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .collection-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .search-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .advanced-search {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .advanced-search.show {
+            display: block;
+        }
+
+        .advanced-search h4 {
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: flex-end;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .search-results-info {
+            margin-bottom: 15px;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .collection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .collection-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .collection-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .collection-card h4 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .collection-card .grade {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+        }
+
+        .card-image-container {
+            text-align: center;
+            margin: 10px 0 15px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card-image-container img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+
+        .card-details-grid {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .card-details-grid p {
+            margin: 4px 0;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 20px;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            color: #1f2937;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            background: #dc2626;
+        }
+
+        .modal-images {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .modal-image-container {
+            text-align: center;
+        }
+
+        .modal-image-container img {
+            max-width: 250px;
+            max-height: 350px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+
+        .modal-image-label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        .modal-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .modal-detail-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .modal-detail-label {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .modal-detail-value {
+            color: #1f2937;
+            font-size: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎴 PSA Card Lookup & Collection</h1>
+            <p>Look up PSA graded cards and build your collection</p>
+        </div>
+
+        <!-- PSA Lookup Section -->
+        <div class="lookup-section">
+            <h2>🔍 Look Up PSA Card</h2>
+            <div class="lookup-form">
+                <input 
+                    type="text" 
+                    id="certInput" 
+                    placeholder="Enter PSA Cert Number (e.g., 12345678)"
+                    maxlength="10"
+                >
+                <button onclick="lookupCard()" class="btn btn-primary">Look Up Card</button>
+            </div>
+            
+            <div id="lookupResult" class="result-section"></div>
+        </div>
+
+        <!-- Collection Section -->
+        <div class="collection-section">
+            <div class="collection-header">
+                <h2>📚 Your Collection</h2>
+                
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input"
+                        placeholder="🔍 Search cards by name..."
+                        onkeyup="performSearch()"
+                    >
+                    <div class="search-buttons">
+                        <button onclick="toggleAdvancedSearch()" class="btn btn-secondary btn-small">
+                            Advanced
+                        </button>
+                        <button onclick="clearSearch()" class="btn btn-secondary btn-small">
+                            Clear
+                        </button>
+                        <button onclick="loadCollection()" class="btn btn-primary btn-small">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Search Panel -->
+            <div id="advancedSearch" class="advanced-search">
+                <h4>🔍 Advanced Search & Filters</h4>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="filterCertNumber">Cert Number</label>
+                        <input type="text" id="filterCertNumber" placeholder="e.g., 114913905" onkeyup="performSearch()">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterCardNumber">Card Number</label>
+                        <input type="text" id="filterCardNumber" placeholder="e.g., 76" onkeyup="performSearch()">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterSpecNumber">Spec Number</label>
+                        <input type="text" id="filterSpecNumber" placeholder="e.g., E582000094" onkeyup="performSearch()">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterGrade">Grade</label>
+                        <select id="filterGrade" onchange="performSearch()">
+                            <option value="">All Grades</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterSet">Set</label>
+                        <select id="filterSet" onchange="performSearch()">
+                            <option value="">All Sets</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterBrand">Brand</label>
+                        <select id="filterBrand" onchange="performSearch()">
+                            <option value="">All Brands</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterYear">Year</label>
+                        <select id="filterYear" onchange="performSearch()">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterCategory">Category</label>
+                        <select id="filterCategory" onchange="performSearch()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filterVariety">Variety</label>
+                        <select id="filterVariety" onchange="performSearch()">
+                            <option value="">All Varieties</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="minValue">Min Value ($)</label>
+                        <input type="number" id="minValue" placeholder="0" onchange="performSearch()">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="maxValue">Max Value ($)</label>
+                        <input type="number" id="maxValue" placeholder="Any" onchange="performSearch()">
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button onclick="clearAllFilters()" class="btn btn-secondary btn-small">
+                        Clear All Filters
+                    </button>
+                    <button onclick="performSearch()" class="btn btn-primary btn-small">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+
+            <div id="searchResults" class="search-results-info"></div>
+            <div id="collectionStats" class="stats"></div>
+            <div id="collectionGrid" class="collection-grid"></div>
+        </div>
+
+        <!-- Card Detail Modal -->
+        <div id="cardModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle" class="modal-title">Card Details</h2>
+                    <button onclick="closeModal()" class="close-btn">×</button>
+                </div>
+                
+                <div id="modalImages" class="modal-images"></div>
+                <div id="modalDetails" class="modal-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let currentCardData = null;
+        let allCards = []; // Store all cards for modal access
+        let filteredCards = []; // Store filtered results
+
+        // Search and filter functions
+        function toggleAdvancedSearch() {
+            const advancedSearch = document.getElementById('advancedSearch');
+            advancedSearch.classList.toggle('show');
+        }
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            // Get all filter values
+            const certNumberFilter = document.getElementById('filterCertNumber').value.toLowerCase().trim();
+            const cardNumberFilter = document.getElementById('filterCardNumber').value.toLowerCase().trim();
+            const specNumberFilter = document.getElementById('filterSpecNumber').value.toLowerCase().trim();
+            const gradeFilter = document.getElementById('filterGrade').value;
+            const setFilter = document.getElementById('filterSet').value;
+            const brandFilter = document.getElementById('filterBrand').value;
+            const yearFilter = document.getElementById('filterYear').value;
+            const categoryFilter = document.getElementById('filterCategory').value;
+            const varietyFilter = document.getElementById('filterVariety').value;
+            const minValue = parseFloat(document.getElementById('minValue').value) || 0;
+            const maxValue = parseFloat(document.getElementById('maxValue').value) || Infinity;
+
+            // Filter cards based on all criteria
+            filteredCards = allCards.filter(card => {
+                // Main search bar - searches across name, cert_number, set, brand, variety
+                const matchesSearch = !searchTerm || 
+                    (card.name && card.name.toLowerCase().includes(searchTerm)) ||
+                    (card.cert_number && card.cert_number.toLowerCase().includes(searchTerm)) ||
+                    (card.set && card.set.toLowerCase().includes(searchTerm)) ||
+                    (card.brand && card.brand.toLowerCase().includes(searchTerm)) ||
+                    (card.variety && card.variety.toLowerCase().includes(searchTerm)) ||
+                    (card.notes && card.notes.toLowerCase().includes(searchTerm));
+
+                // Specific field filters
+                const matchesCertNumber = !certNumberFilter || 
+                    (card.cert_number && card.cert_number.toLowerCase().includes(certNumberFilter));
+                
+                const matchesCardNumber = !cardNumberFilter || 
+                    (card.card_number && card.card_number.toLowerCase().includes(cardNumberFilter));
+                
+                const matchesSpecNumber = !specNumberFilter || 
+                    (card.spec_number && card.spec_number.toLowerCase().includes(specNumberFilter));
+
+                const matchesGrade = !gradeFilter || card.grade === gradeFilter;
+                const matchesSet = !setFilter || card.set === setFilter;
+                const matchesBrand = !brandFilter || card.brand === brandFilter;
+                const matchesYear = !yearFilter || card.year === yearFilter;
+                const matchesCategory = !categoryFilter || card.category === categoryFilter;
+                const matchesVariety = !varietyFilter || card.variety === varietyFilter;
+
+                // Value range filter
+                const cardValue = card.current_value || 0;
+                const matchesValue = cardValue >= minValue && cardValue <= maxValue;
+
+                return matchesSearch && matchesCertNumber && matchesCardNumber && 
+                       matchesSpecNumber && matchesGrade && matchesSet && matchesBrand && 
+                       matchesYear && matchesCategory && matchesVariety && matchesValue;
+            });
+
+            // Update search results info
+            updateSearchResults();
+
+            // Display filtered cards
+            displayCollection(filteredCards);
+
+            // Update stats for filtered results
+            displayFilteredStats(filteredCards);
+        }
+
+        function updateSearchResults() {
+            const resultsDiv = document.getElementById('searchResults');
+            const totalCards = allCards.length;
+            const filteredCount = filteredCards.length;
+
+            if (filteredCount === totalCards) {
+                resultsDiv.innerHTML = '';
+            } else {
+                resultsDiv.innerHTML = `Showing ${filteredCount} of ${totalCards} cards`;
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            performSearch();
+        }
+
+        function clearAllFilters() {
+            // Clear main search
+            document.getElementById('searchInput').value = '';
+            
+            // Clear all advanced search fields
+            document.getElementById('filterCertNumber').value = '';
+            document.getElementById('filterCardNumber').value = '';
+            document.getElementById('filterSpecNumber').value = '';
+            document.getElementById('filterGrade').value = '';
+            document.getElementById('filterSet').value = '';
+            document.getElementById('filterBrand').value = '';
+            document.getElementById('filterYear').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterVariety').value = '';
+            document.getElementById('minValue').value = '';
+            document.getElementById('maxValue').value = '';
+            
+            // Hide advanced search
+            document.getElementById('advancedSearch').classList.remove('show');
+            
+            // Reset to show all cards
+            filteredCards = [...allCards];
+            updateSearchResults();
+            displayCollection(filteredCards);
+            displayStats(calculateStats(allCards));
+        }
+
+        function populateFilterOptions() {
+            // Get unique values for dropdowns from your collection data
+            const grades = [...new Set(allCards.map(card => card.grade).filter(Boolean))].sort();
+            const sets = [...new Set(allCards.map(card => card.set).filter(Boolean))].sort();
+            const brands = [...new Set(allCards.map(card => card.brand).filter(Boolean))].sort();
+            const years = [...new Set(allCards.map(card => card.year).filter(Boolean))].sort();
+            const categories = [...new Set(allCards.map(card => card.category).filter(Boolean))].sort();
+            const varieties = [...new Set(allCards.map(card => card.variety).filter(Boolean))].sort();
+
+            // Populate Grade dropdown
+            const gradeSelect = document.getElementById('filterGrade');
+            gradeSelect.innerHTML = '<option value="">All Grades</option>';
+            grades.forEach(grade => {
+                gradeSelect.innerHTML += `<option value="${grade}">${grade}</option>`;
+            });
+
+            // Populate Set dropdown
+            const setSelect = document.getElementById('filterSet');
+            setSelect.innerHTML = '<option value="">All Sets</option>';
+            sets.forEach(set => {
+                setSelect.innerHTML += `<option value="${set}">${set}</option>`;
+            });
+
+            // Populate Brand dropdown
+            const brandSelect = document.getElementById('filterBrand');
+            brandSelect.innerHTML = '<option value="">All Brands</option>';
+            brands.forEach(brand => {
+                brandSelect.innerHTML += `<option value="${brand}">${brand}</option>`;
+            });
+
+            // Populate Year dropdown
+            const yearSelect = document.getElementById('filterYear');
+            yearSelect.innerHTML = '<option value="">All Years</option>';
+            years.forEach(year => {
+                yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+
+            // Populate Category dropdown
+            const categorySelect = document.getElementById('filterCategory');
+            categorySelect.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(category => {
+                categorySelect.innerHTML += `<option value="${category}">${category}</option>`;
+            });
+
+            // Populate Variety dropdown
+            const varietySelect = document.getElementById('filterVariety');
+            varietySelect.innerHTML = '<option value="">All Varieties</option>';
+            varieties.forEach(variety => {
+                varietySelect.innerHTML += `<option value="${variety}">${variety}</option>`;
+            });
+        }
+
+        function calculateStats(cards) {
+            const totalCards = cards.length;
+            const totalValue = cards.reduce((sum, card) => sum + (card.current_value || 0), 0);
+            const averageValue = totalCards > 0 ? totalValue / totalCards : 0;
+
+            return {
+                total_cards: totalCards,
+                total_value: Math.round(totalValue * 100) / 100,
+                average_value: Math.round(averageValue * 100) / 100
+            };
+        }
+
+        function displayFilteredStats(cards) {
+            const stats = calculateStats(cards);
+            displayStats(stats);
+        }
+
+        // Look up PSA card
+        async function lookupCard() {
+            const certNumber = document.getElementById('certInput').value.trim();
+            const resultDiv = document.getElementById('lookupResult');
+            
+            if (!certNumber) {
+                resultDiv.innerHTML = '<div class="error-message">Please enter a cert number</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="loading">🔍 Looking up PSA card...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/psa/lookup/${certNumber}`);
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (response.ok) {
+                    if (data.success && data.card_data) {
+                        currentCardData = data.card_data;
+                        console.log('Card Data:', currentCardData);
+                        displayCardResult(data.card_data);
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-message">❌ ${data.error || 'No card data found'}</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ ${data.error || 'API Error'}</div>`;
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                resultDiv.innerHTML = `<div class="error-message">❌ Network error: ${error.message}</div>`;
+            }
+        }
+
+        function displayCardResult(cardData) {
+            const resultDiv = document.getElementById('lookupResult');
+            
+            resultDiv.innerHTML = `
+                <div class="card-preview">
+                    <h3>✅ PSA Card Found!</h3>
+                    
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Cert Number</div>
+                            <div class="detail-value">${cardData.cert_number || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Card Name</div>
+                            <div class="detail-value">${cardData.name || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Set/Brand</div>
+                            <div class="detail-value">${cardData.set || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Card Number</div>
+                            <div class="detail-value">${cardData.card_number || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Spec Number</div>
+                            <div class="detail-value">${cardData.spec_number || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Grade</div>
+                            <div class="detail-value">${cardData.grade || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Year</div>
+                            <div class="detail-value">${cardData.year || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Category</div>
+                            <div class="detail-value">${cardData.category || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Variety</div>
+                            <div class="detail-value">${cardData.variety || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Label Type</div>
+                            <div class="detail-value">${cardData.label_type || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Population (This Grade)</div>
+                            <div class="detail-value">${cardData.total_population || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Population Higher</div>
+                            <div class="detail-value">${cardData.population_higher || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    ${(cardData.image_front || cardData.image_back || cardData.image_url) ? `
+                        <div class="card-image">
+                            <h4 style="margin-bottom: 15px;">📸 Card Images</h4>
+                            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                                ${cardData.image_front ? `
+                                    <div style="text-align: center;">
+                                        <p style="margin-bottom: 10px; font-weight: bold;">Front</p>
+                                        <img src="${cardData.image_front}" alt="Card Front" style="max-width: 200px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" onerror="this.style.display='none'">
+                                    </div>
+                                ` : ''}
+                                ${cardData.image_back ? `
+                                    <div style="text-align: center;">
+                                        <p style="margin-bottom: 10px; font-weight: bold;">Back</p>
+                                        <img src="${cardData.image_back}" alt="Card Back" style="max-width: 200px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" onerror="this.style.display='none'">
+                                    </div>
+                                ` : ''}
+                                ${cardData.image_url && !cardData.image_front && !cardData.image_back ? `
+                                    <div style="text-align: center;">
+                                        <img src="${cardData.image_url}" alt="Card Image" style="max-width: 200px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" onerror="this.style.display='none'">
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : '<p style="text-align: center; color: #6b7280; margin: 20px 0; font-style: italic;">📷 Images not available (may be rate limited)</p>'}
+
+                    <div class="add-form">
+                        <h4>💰 Add Purchase Information (Optional)</h4>
+                        <div class="form-group">
+                            <input type="number" id="purchasePrice" placeholder="Purchase Price ($)" step="0.01">
+                            <input type="number" id="currentValue" placeholder="Current Value ($)" step="0.01">
+                        </div>
+                        <input type="text" id="notes" placeholder="Notes (optional)" style="width: 100%; margin-bottom: 15px;">
+                        
+                        <button onclick="addToCollection()" class="btn btn-success">
+                            ➕ Add to Collection
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function addToCollection() {
+            if (!currentCardData) {
+                alert('No card data available');
+                return;
+            }
+
+            const purchasePrice = document.getElementById('purchasePrice').value;
+            const currentValue = document.getElementById('currentValue').value;
+            const notes = document.getElementById('notes').value;
+
+            const cardToAdd = {
+                ...currentCardData,
+                purchase_price: purchasePrice || 0,
+                current_value: currentValue || 0,
+                notes: notes || ''
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/cards/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cardToAdd)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Card added to collection!');
+                    document.getElementById('certInput').value = '';
+                    document.getElementById('lookupResult').innerHTML = '';
+                    currentCardData = null;
+                    loadCollection();
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error.message}`);
+            }
+        }
+
+        // Modal functions
+        function openCardModal(cardId) {
+            const card = allCards.find(c => c.id === cardId);
+            if (!card) return;
+
+            document.getElementById('modalTitle').textContent = card.name || 'Card Details';
+
+            const modalImages = document.getElementById('modalImages');
+            let imagesHTML = '';
+            
+            if (card.image_front || card.image_back) {
+                if (card.image_front) {
+                    imagesHTML += `
+                        <div class="modal-image-container">
+                            <img src="${card.image_front}" alt="Card Front">
+                            <div class="modal-image-label">Front</div>
+                        </div>
+                    `;
+                }
+                if (card.image_back) {
+                    imagesHTML += `
+                        <div class="modal-image-container">
+                            <img src="${card.image_back}" alt="Card Back">
+                            <div class="modal-image-label">Back</div>
+                        </div>
+                    `;
+                }
+            } else {
+                imagesHTML = '<p style="text-align: center; color: #6b7280;">No images available</p>';
+            }
+            modalImages.innerHTML = imagesHTML;
+
+            const modalDetails = document.getElementById('modalDetails');
+            modalDetails.innerHTML = `
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Cert Number</div>
+                    <div class="modal-detail-value">${card.cert_number || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Card Name</div>
+                    <div class="modal-detail-value">${card.name || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Set/Brand</div>
+                    <div class="modal-detail-value">${card.set || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Card Number</div>
+                    <div class="modal-detail-value">${card.card_number || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Spec Number</div>
+                    <div class="modal-detail-value">${card.spec_number || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Grade</div>
+                    <div class="modal-detail-value">${card.grade || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Grade Description</div>
+                    <div class="modal-detail-value">${card.grade_description || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Year</div>
+                    <div class="modal-detail-value">${card.year || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Category</div>
+                    <div class="modal-detail-value">${card.category || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Variety</div>
+                    <div class="modal-detail-value">${card.variety || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Label Type</div>
+                    <div class="modal-detail-value">${card.label_type || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Population (This Grade)</div>
+                    <div class="modal-detail-value">${card.total_population || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Population Higher</div>
+                    <div class="modal-detail-value">${card.population_higher || 'N/A'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Purchase Price</div>
+                    <div class="modal-detail-value">${card.purchase_price > 0 ? '$' + card.purchase_price : 'Not specified'}</div>
+                </div>
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Current Value</div>
+                    <div class="modal-detail-value">${card.current_value > 0 ? '$' + card.current_value : 'Not specified'}</div>
+                </div>
+                ${card.notes ? `
+                    <div class="modal-detail-item" style="grid-column: 1 / -1;">
+                        <div class="modal-detail-label">Notes</div>
+                        <div class="modal-detail-value">${card.notes}</div>
+                    </div>
+                ` : ''}
+                <div class="modal-detail-item">
+                    <div class="modal-detail-label">Added to Collection</div>
+                    <div class="modal-detail-value">${card.added_date || 'N/A'}</div>
+                </div>
+            `;
+
+            document.getElementById('cardModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('cardModal').classList.remove('show');
+        }
+
+        document.getElementById('cardModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        async function loadCollection() {
+            try {
+                const [cardsResponse, statsResponse] = await Promise.all([
+                    fetch(`${API_BASE}/cards`),
+                    fetch(`${API_BASE}/stats`)
+                ]);
+
+                const cards = await cardsResponse.json();
+                const stats = await statsResponse.json();
+
+                allCards = cards;
+                filteredCards = [...cards]; // Initialize filtered cards with all cards
+                
+                // Populate filter dropdowns with available options
+                populateFilterOptions();
+                
+                // Display initial results
+                updateSearchResults();
+                displayStats(stats);
+                displayCollection(filteredCards);
+            } catch (error) {
+                console.error('Error loading collection:', error);
+            }
+        }
+
+        function displayStats(stats) {
+            const statsDiv = document.getElementById('collectionStats');
+            
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total_cards}</div>
+                    <div class="stat-label">Total Cards</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">$${stats.total_value}</div>
+                    <div class="stat-label">Total Value</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">$${stats.average_value}</div>
+                    <div class="stat-label">Average Value</div>
+                </div>
+            `;
+        }
+
+        function displayCollection(cards) {
+            const gridDiv = document.getElementById('collectionGrid');
+            
+            if (cards.length === 0) {
+                gridDiv.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No cards in collection yet</h3>
+                        <p>Use the lookup tool above to add your first card!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            gridDiv.innerHTML = cards.map(card => `
+                <div class="collection-card" onclick="openCardModal(${card.id})">
+                    <button onclick="deleteCard(${card.id}); event.stopPropagation();" class="btn btn-danger delete-btn">×</button>
+                    <div class="grade">PSA ${card.grade}</div>
+                    
+                    ${card.image_front ? `
+                        <div class="card-image-container">
+                            <img src="${card.image_front}" alt="${card.name}" onerror="this.style.display='none'">
+                        </div>
+                    ` : ''}
+                    
+                    <div class="card-details-grid">
+                        <h4>${card.name}</h4>
+                        <p><strong>Set:</strong> ${card.set}</p>
+                        <p><strong>Cert:</strong> ${card.cert_number}</p>
+                        
+                        ${card.card_number ? `<p><strong>Number:</strong> ${card.card_number}</p>` : ''}
+                        ${card.year ? `<p><strong>Year:</strong> ${card.year}</p>` : ''}
+                        
+                        <div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                            ${card.purchase_price > 0 ? `<p><strong>Purchase:</strong> ${card.purchase_price}</p>` : ''}
+                            ${card.current_value > 0 ? `<p><strong>Value:</strong> ${card.current_value}</p>` : ''}
+                        </div>
+                        
+                        ${card.notes ? `<p style="margin-top: 10px; font-style: italic; color: #6b7280;">"${card.notes}"</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteCard(cardId) {
+            if (!confirm('Are you sure you want to remove this card?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/cards/${cardId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadCollection();
+                } else {
+                    alert('Error deleting card');
+                }
+            } catch (error) {
+                alert('Network error');
+            }
+        }
+
+        // Allow Enter key for search
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load collection on page load
+            loadCollection();
+            
+            // Enter key for card lookup
+            document.getElementById('certInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    lookupCard();
+                }
+            });
+            
+            // Enter key for search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

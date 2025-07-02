@@ -1,0 +1,115 @@
+<!-- static/components/collection-section.html -->
+<!-- Copy this content to your static/components/collection-section.html file -->
+
+<div class="collection-section">
+    <div class="collection-header">
+        <h2>📚 Your Collection</h2>
+        
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input"
+                placeholder="🔍 Search cards by name..."
+                onkeyup="performSearch()"
+            >
+            <div class="search-buttons">
+                <button onclick="toggleAdvancedSearch()" class="btn btn-secondary btn-small">
+                    Advanced
+                </button>
+                <button onclick="clearSearch()" class="btn btn-secondary btn-small">
+                    Clear
+                </button>
+                <button onclick="loadCollection()" class="btn btn-primary btn-small">
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Panel -->
+    <div id="advancedSearch" class="advanced-search">
+        <h4>🔍 Advanced Search & Filters</h4>
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="filterCertNumber">Cert Number</label>
+                <input type="text" id="filterCertNumber" placeholder="e.g., 114913905" onkeyup="performSearch()">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterCardNumber">Card Number</label>
+                <input type="text" id="filterCardNumber" placeholder="e.g., 76" onkeyup="performSearch()">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterSpecNumber">Spec Number</label>
+                <input type="text" id="filterSpecNumber" placeholder="e.g., E582000094" onkeyup="performSearch()">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterGrade">Grade</label>
+                <select id="filterGrade" onchange="performSearch()">
+                    <option value="">All Grades</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterSet">Set</label>
+                <select id="filterSet" onchange="performSearch()">
+                    <option value="">All Sets</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterBrand">Brand</label>
+                <select id="filterBrand" onchange="performSearch()">
+                    <option value="">All Brands</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterYear">Year</label>
+                <select id="filterYear" onchange="performSearch()">
+                    <option value="">All Years</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterCategory">Category</label>
+                <select id="filterCategory" onchange="performSearch()">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterVariety">Variety</label>
+                <select id="filterVariety" onchange="performSearch()">
+                    <option value="">All Varieties</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="minValue">Min Value ($)</label>
+                <input type="number" id="minValue" placeholder="0" onchange="performSearch()">
+            </div>
+            
+            <div class="filter-group">
+                <label for="maxValue">Max Value ($)</label>
+                <input type="number" id="maxValue" placeholder="Any" onchange="performSearch()">
+            </div>
+        </div>
+        
+        <div class="filter-actions">
+            <button onclick="clearAllFilters()" class="btn btn-secondary btn-small">
+                Clear All Filters
+            </button>
+            <button onclick="performSearch()" class="btn btn-primary btn-small">
+                Apply Filters
+            </button>
+        </div>
+    </div>
+
+    <div id="searchResults" class="search-results-info"></div>
+    <div id="collectionStats" class="stats"></div>
+    <div id="collectionGrid" class="collection-grid"></div>
+</div>

@@ -1,4 +1,4 @@
-// main.go - PSA Card Collection API in Go
+// main.go - PSA Card Collection API in Go (Updated with working PSA API)
 package main
 
 import (
@@ -120,6 +120,7 @@ func main() {
 	api.HandleFunc("/cards", getCardsHandler).Methods("GET")
 	api.HandleFunc("/cards/add", addCardHandler).Methods("POST")
 	api.HandleFunc("/cards/{id}", deleteCardHandler).Methods("DELETE")
+	api.HandleFunc("/cards/{id}", updateCardHandler).Methods("PUT") // Added PUT endpoint
 	api.HandleFunc("/stats", getStatsHandler).Methods("GET")
 
 	// Static file serving
@@ -128,7 +129,7 @@ func main() {
 	// Setup CORS
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
 		AllowedHeaders: []string{"*"},
 	})
 
@@ -200,6 +201,24 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
+// Clean cert number - remove non-digits and pad with zeros
+func cleanCertNumber(certNumber string) string {
+	// Remove all non-digit characters
+	clean := ""
+	for _, char := range certNumber {
+		if char >= '0' && char <= '9' {
+			clean += string(char)
+		}
+	}
+
+	// Pad with zeros to 8 digits
+	for len(clean) < 8 {
+		clean = "0" + clean
+	}
+
+	return clean
+}
+
 func psaLookupHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	certNumber := vars["certNumber"]
@@ -212,22 +231,14 @@ func psaLookupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clean cert number
-	cleanCert := ""
-	for _, char := range certNumber {
-		if char >= '0' && char <= '9' {
-			cleanCert += string(char)
-		}
-	}
+	cleanCert := cleanCertNumber(certNumber)
 
 	if len(cleanCert) < 8 {
 		http.Error(w, `{"error": "Invalid cert number format"}`, http.StatusBadRequest)
 		return
 	}
 
-	// Pad with zeros if needed
-	for len(cleanCert) < 8 {
-		cleanCert = "0" + cleanCert
-	}
+	log.Printf("🔍 Looking up PSA cert: %s", cleanCert)
 
 	// Step 1: Get card data
 	cardData, err := lookupPSACard(cleanCert)
@@ -252,6 +263,7 @@ func psaLookupHandler(w http.ResponseWriter, r *http.Request) {
 				cardData.ImageBack = img.ImageURL
 			}
 		}
+		log.Printf("✅ Added images: Front=%s, Back=%s", cardData.ImageFront, cardData.ImageBack)
 	}
 
 	log.Printf("✅ PSA lookup successful for cert: %s", certNumber)
@@ -281,6 +293,8 @@ func lookupPSACard(certNumber string) (*Card, error) {
 	}
 	defer resp.Body.Close()
 
+	log.Printf("📊 Response status: %d", resp.StatusCode)
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("PSA API returned status %d", resp.StatusCode)
 	}
@@ -290,15 +304,21 @@ func lookupPSACard(certNumber string) (*Card, error) {
 		return nil, err
 	}
 
+	log.Printf("📡 Full PSA Response: %s", string(body))
+
 	var psaResp PSAResponse
 	err = json.Unmarshal(body, &psaResp)
 	if err != nil {
 		return nil, err
 	}
 
+	// Check if PSACert exists and has CertNumber
 	if psaResp.PSACert.CertNumber == "" {
-		return nil, fmt.Errorf("no PSA cert data found")
+		log.Printf("❌ No PSACert found in response")
+		return nil, fmt.Errorf("No PSA cert data found")
 	}
+
+	log.Printf("✅ SUCCESS: Valid PSA cert found!")
 
 	// Convert PSA response to our Card structure
 	card := &Card{
@@ -321,11 +341,15 @@ func lookupPSACard(certNumber string) (*Card, error) {
 		ImageURL:       psaResp.PSACert.ImageFront,
 	}
 
+	log.Printf("📋 Parsed card info: %+v", card)
+
 	return card, nil
 }
 
 func lookupPSAImages(certNumber string) ([]PSAImageResponse, error) {
 	url := fmt.Sprintf("https://api.psacard.com/publicapi/cert/GetImagesByCertNumber/%s", certNumber)
+
+	log.Printf("🖼️ Getting images for cert: %s", certNumber)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -341,7 +365,10 @@ func lookupPSAImages(certNumber string) ([]PSAImageResponse, error) {
 	}
 	defer resp.Body.Close()
 
+	log.Printf("📊 Image API status: %d", resp.StatusCode)
+
 	if resp.StatusCode == 429 {
+		log.Printf("⏰ Image API rate limited")
 		return nil, fmt.Errorf("rate limited")
 	}
 
@@ -359,6 +386,8 @@ func lookupPSAImages(certNumber string) ([]PSAImageResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("✅ Got image data: %+v", images)
 
 	return images, nil
 }
@@ -406,6 +435,111 @@ func addCardHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"success": true,
 		"card":    card,
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+func updateCardHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid card ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Parse request body
+	var updateData map[string]interface{}
+	err = json.NewDecoder(r.Body).Decode(&updateData)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("📝 Updating card %d with data: %+v", id, updateData)
+
+	// Find the card to update
+	cardIndex := -1
+	for i, card := range collection.Cards {
+		if card.ID == id {
+			cardIndex = i
+			break
+		}
+	}
+
+	if cardIndex == -1 {
+		http.Error(w, `{"error": "Card not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Update the card fields
+	card := &collection.Cards[cardIndex]
+
+	// Update notes if provided
+	if notes, ok := updateData["notes"]; ok {
+		if notesStr, ok := notes.(string); ok {
+			card.Notes = notesStr
+			log.Printf("📝 Updated notes for card %d", id)
+		}
+	}
+
+	// Update price if provided
+	if price, ok := updateData["price"]; ok {
+		switch v := price.(type) {
+		case float64:
+			if v >= 0 {
+				card.CurrentValue = v
+				log.Printf("💰 Updated price for card %d to $%.2f", id, v)
+			} else {
+				http.Error(w, `{"error": "Price must be a positive number"}`, http.StatusBadRequest)
+				return
+			}
+		case string:
+			if priceFloat, err := strconv.ParseFloat(v, 64); err == nil && priceFloat >= 0 {
+				card.CurrentValue = priceFloat
+				log.Printf("💰 Updated price for card %d to $%.2f", id, priceFloat)
+			} else {
+				http.Error(w, `{"error": "Invalid price format"}`, http.StatusBadRequest)
+				return
+			}
+		default:
+			http.Error(w, `{"error": "Invalid price format"}`, http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Update current_value if provided (alternative field name)
+	if currentValue, ok := updateData["current_value"]; ok {
+		switch v := currentValue.(type) {
+		case float64:
+			if v >= 0 {
+				card.CurrentValue = v
+				log.Printf("💰 Updated current_value for card %d to $%.2f", id, v)
+			}
+		case string:
+			if priceFloat, err := strconv.ParseFloat(v, 64); err == nil && priceFloat >= 0 {
+				card.CurrentValue = priceFloat
+				log.Printf("💰 Updated current_value for card %d to $%.2f", id, priceFloat)
+			}
+		}
+	}
+
+	// Save the updated collection
+	err = saveCollection()
+	if err != nil {
+		log.Printf("⚠️ Failed to save collection after update: %v", err)
+		http.Error(w, `{"error": "Failed to save changes"}`, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ Card %d updated successfully", id)
+
+	// Return the updated card
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"success": true,
+		"card":    *card,
 	}
 	json.NewEncoder(w).Encode(response)
 }
