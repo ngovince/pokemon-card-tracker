@@ -1,0 +1,22 @@
+pokemon-card-tracker/
+├── main.go           
+├── ngrok.exe      
+├── go.sum     
+├── go.mod            
+├── static/
+│   ├── login.html    
+│   ├── components/
+│   │   ├── collection-section.html
+│   │   ├── header.html
+│   │   ├── lookup-section.html
+│   │   └── modal.html  
+│   ├── css/
+│   │   ├── base.css
+│   │   ├── components.css
+│   │   ├── editable-fields.css
+│   │   └── modals.css 
+│   └── js/
+│       ├── app.js  
+│       ├── component-loader.js  
+│       └── config.js
+└── readME
