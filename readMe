@@ -1,3 +1,9 @@
+POKEMON CARD PSA COLLECTION TRACKER
+
+    by VINCENT NGO
+
+--STRUCTURE--
+
 pokemon-card-tracker/
 ├── main.go           
 ├── ngrok.exe      
@@ -20,3 +26,18 @@ pokemon-card-tracker/
 │       ├── component-loader.js  
 │       └── config.js
 └── readME
+
+
+TO RUN:
+
+--MUST BE IN DIRECTORY OF "pokemon-card-tracker"--
+
+$ go mod tidy
+
+$ run go main.go
+
+--IN SEPERATE POWERSHELL/TERMINAL ALSO IN DIRECTORY "pokemon-card-tracker"--
+
+$ .\ngrok.exe http 8080
+
+--COPY LINK FROM "Forwarding" LINE, UP TO .APP, PASTE IN SEARCH ENGINE--
